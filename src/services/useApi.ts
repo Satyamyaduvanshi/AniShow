@@ -45,8 +45,8 @@ export const useInfiniteApi = (endpoint: string) => {
     initialPageParam: 1,
     retry: 1,
     getNextPageParam: (lastPage: any) => {
-      if (lastPage?.pageInfo?.hasNextPage) {
-        return lastPage.pageInfo.currentPage + 1;
+      if (lastPage?.data?.pageInfo?.hasNextPage) {
+        return lastPage.data.pageInfo.currentPage + 1;
       }
       return undefined;
     },

@@ -1,11 +1,14 @@
 "use client";
 
+import React, { useRef, useState, useEffect } from "react";
 import { useApi } from "@/services/useApi";
-import Image from "next/image";
-import React, { useRef } from "react";
-
-
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Loading from "./Loading";
+import AnimeCard from "./animecard"; 
+
+interface FilterSearchProps {
+  onClose: () => void;
+}
 
 interface EpisodeInfo {
   sub: number;
@@ -19,133 +22,83 @@ interface AnimeItem {
   type: string;
   poster: string;
   episodes: EpisodeInfo;
+  duration?: string; 
 }
 
-const FilterSearch = () => {
+const FilterSearch: React.FC<FilterSearchProps> = ({ onClose }) => {
   const { data, isLoading, error } = useApi("/animes/most-favorite?page=1");
   const mostFavorite: AnimeItem[] = data?.data?.response || [];
 
-
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  const [isAtStart, setIsAtStart] = useState(true);
+  const [isAtEnd, setIsAtEnd] = useState(false);
 
-
-  const scrollLeft = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({
-        left: -200, 
-        behavior: "smooth",
-      });
+  const handleScroll = () => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+      setIsAtStart(scrollLeft === 0);
+      setIsAtEnd(scrollLeft + clientWidth >= scrollWidth - 1);
     }
   };
-
-
-  const scrollRight = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({
-        left: 200, 
-        behavior: "smooth",
-      });
+  
+  useEffect(() => {
+    if (mostFavorite.length) {
+        handleScroll();
     }
+  }, [mostFavorite]);
+
+  const scrollBy = (amount: number) => {
+    scrollContainerRef.current?.scrollBy({ left: amount, behavior: "smooth" });
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <Loading />
+      </div>
+    );
+  }
 
   return (
+    <div className="relative p-4 font-sans">
+      <style>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}`}</style>
 
-    <div className="relative bottom-1 p-4 font-sans bg-amber-200">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-800">Most Favorite</h2>
+        <button onClick={onClose} className="text-3xl font-light text-gray-500 transition-colors hover:text-black" aria-label="Close filters">
+          &times;
+        </button>
+      </div>
 
-      <style>
-        {`
-          .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-          }
-          .scrollbar-hide {
-            -ms-overflow-style: none;  
-            scrollbar-width: none;  
-          }
-        `}
-      </style>
-
+      {error && (
+        <p className="text-center text-red-500">
+          Error: {error instanceof Error ? error.message : "An unknown error occurred"}
+        </p>
+      )}
       
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Most Favorite</h2>
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-gray-700">Trending Now</h3>
         <div className="flex space-x-2">
-          <button
-            onClick={scrollLeft}
-            className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-            aria-label="Scroll left"
-          >
-            <ChevronLeft className="h-5 w-5 text-gray-700" />
+          <button onClick={() => scrollBy(-300)} disabled={isAtStart} className="cursor-pointer rounded-full border border-gray-800 p-2 transition-colors hover:bg-gray-300 disabled:cursor-not-allowed disabled:border-gray-300 disabled:opacity-50" aria-label="Scroll left">
+            <ChevronLeft className="h-5 w-5 text-gray-800" />
           </button>
-          <button
-            onClick={scrollRight}
-            className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-            aria-label="Scroll right"
-          >
-            <ChevronRight className="h-5 w-5 text-gray-700" />
+          <button onClick={() => scrollBy(300)} disabled={isAtEnd} className="cursor-pointer rounded-full border border-gray-800 p-2 transition-colors hover:bg-gray-300 disabled:cursor-not-allowed disabled:border-gray-300 disabled:opacity-50" aria-label="Scroll right">
+            <ChevronRight className="h-5 w-5 text-gray-800" />
           </button>
         </div>
       </div>
 
-      {/* Loading and Error States */}
-      {isLoading && <p className="text-gray-600">Loading...</p>}
-      {error && (
-        <p className="text-red-500">Error: {(error as Error).message}</p>
-      )}
-
-
       <div
         ref={scrollContainerRef}
-        className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide pt-2 pl-2 pr-2"
+        onScroll={handleScroll}
+        className="scrollbar-hide flex space-x-4 overflow-x-auto p-2"
       >
         {mostFavorite.map((item) => (
-    
-          <a
-            key={item.id}
-            href="#" 
-            className="flex-shrink-0 w-44 space-y-2 group transition-transform duration-300 ease-in-out hover:scale-105"
-          >
-            <Image
-              src={item.poster || "/fallback-image.jpg"}
-              alt={item.title}
-              width={176}
-              height={264}
-              className="rounded-lg object-cover w-full aspect-[2/3] bg-gray-300"
-            />
-
-            <div className="flex flex-col">
-              <h2
-                className="text-gray-800 font-semibold truncate group-hover:text-gray-600"
-                title={item.title}
-              >
-                {item.title}
-              </h2>
-
-              <div className="flex items-center justify-between mt-1">
-                
-                <div className="flex items-center space-x-1">
-                  {item.episodes?.sub && (
-                    <span className="border-[#c49002] border text-[#c49002] bg-[#c49002]/20 text-[9px] font-bold px-1.5 py-0.5  rounded">
-                      S: {item.episodes.sub}
-                    </span>
-                  )}
-                  {item.episodes?.dub && (
-                    <span className="border-green-500 border text-green-600 bg-green-500/20 text-[9px] font-bold px-1.5 py-0.5 rounded">
-                      D: {item.episodes.dub}
-                    </span>
-                  )}
-                   {item.episodes?.eps && (
-                    <span className="border-blue-500 border text-blue-600 bg-blue-500/20 text-[9px] font-bold px-1.5 py-0.5 rounded">
-                      T: {item.episodes.eps}
-                    </span>
-                  )}
-                </div>
-
-                
-                <span className="border border-gray-300 text-gray-900 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                  {item.type}
-                </span>
-              </div>
-            </div>
-          </a>
+          <div key={item.id} className="w-44 flex-shrink-0">
+            <AnimeCard data={item} />
+          </div>
         ))}
       </div>
     </div>

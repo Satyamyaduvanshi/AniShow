@@ -1,86 +1,136 @@
 "use client";
 
-import React, { useState } from "react";
-import FilterSearch from "./filterSearch";
+import React, { useState, useRef, useCallback } from "react"; 
+import FilterSearch from "./filterSearch"; 
+import Image from "next/image";
+import Link from "next/link";
+import { genres, navButtons, types } from "@/constant";
+import { FilterIcon, SearchIcon } from "@/svg";
+
 
 const Header = () => {
-  const [filter, setFilter] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<null | "genres" | "types">(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  
 
-  function filterChange() {
-    setFilter((prev) => !prev);
-  }
+  const dropdownTimer = useRef<NodeJS.Timeout | null>(null);
 
+ 
+  const handleMouseEnter =useCallback( (dropdown: "genres" | "types") => {
+    if (dropdownTimer.current) {
+      clearTimeout(dropdownTimer.current); 
+    }
+    setActiveDropdown(dropdown);
+  },[])
+  
+  
+  const handleMouseLeave =useCallback(() => {
+    dropdownTimer.current = setTimeout(() => {
+      setActiveDropdown(null);
+    }, 200);
+  },[])
+
+  const slugify = (text: string) => text.trim().toLowerCase().replace(/\s+/g, "-");
+
+
+  const navButtonClass = `relative group cursor-pointer text-white transition-all duration-300 ease-in-out`;
+  const navButtonUnderlineClass = `absolute bottom-0 left-0 h-0.5 w-0 bg-red-500 transition-all duration-300 ease-in-out group-hover:w-full`;
+  
   return (
     <>
-      <div className="absolute top-3 bg-amber-100 w-full z-40">
-        <header>
-          <nav className="flex items-center h-[50px] justify-between px-4">
-            <div>
-              <h1 className="text-black text-2xl">anishow</h1>
+      <div className="absolute top-3 z-40 w-full">
+        <header className="mx-16">
+          <nav className="flex h-[50px] items-center justify-between rounded-full bg-[#1d1d1f]/30 px-4 py-7">
+            
+            <Link href="/home">
+              <Image src="/logo2.png" alt="Logo" width={160} height={110} />
+            </Link>
+            <div className="flex h-10 items-center gap-1 rounded-3xl bg-[#1d1d1f]/80 px-4">
+              <SearchIcon />
+              <input
+                type="text"
+                placeholder="Search anime"
+                className="h-8 w-[330px] bg-transparent px-2 text-[18px] text-white placeholder:text-gray-400 outline-none"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <button
+                onClick={() => setIsFilterOpen(true)}
+                className="flex items-center gap-1 text-[18px] font-semibold text-red-500 transition-transform duration-300 ease-in-out hover:-translate-y-0.5 active:scale-90"
+                aria-label="Open filter options"
+              >
+                <FilterIcon />
+                FILTER
+              </button>
             </div>
 
-            <div className="text-2xl">
-              <div className="bg-gray-900 rounded-3xl flex items-center px-4 gap-1 h-10">
-                <div className="font-bold">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                    stroke="currentColor"
-                    className="w-6 h-6 text-white z-10"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                    />
-                  </svg>
+            
+            <div className="flex items-center gap-6 pr-2 font-semibold">
+              
+              <div
+                className="relative"
+                onMouseEnter={() => handleMouseEnter("genres")}
+                onMouseLeave={handleMouseLeave}
+              >
+                <div className={navButtonClass}>
+                  GENRES
+                  <div className={navButtonUnderlineClass} />
                 </div>
-
-                <input
-                  type="text"
-                  placeholder="Search anime"
-                  className="bg-gray-900 text-white px-2 h-8 text-[18px] outline-none"
-                />
-
-                <div>
-                  <button
-                    onClick={filterChange}
-                    className="text-[18px] flex hover:scale-105 transition-transform duration-100 items-center gap-1"
-                    aria-label="Toggle Filter"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth="1.5"
-                      stroke="currentColor"
-                      className="w-6 h-6 text-white"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3Z"
-                      />
-                    </svg>
-                    FILTER
-                  </button>
-                </div>
+                {activeDropdown === "genres" && (
+                   
+                  <div className="absolute top-full left-1/2 z-50 mt-2 w-max -translate-x-1/2 rounded-md border border-gray-700 bg-[#1d1d1f]/90 p-4 shadow-lg transition-opacity duration-300">
+                    <div className="grid grid-cols-3 gap-x-8 gap-y-2">
+                      {genres.map((label) => (
+                        <Link key={label} href={`/animes/genre/${slugify(label)}`} className="whitespace-nowrap text-white transition-colors duration-200 hover:text-red-500">
+                          {label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
 
-            <div className="">
-hell
+              
+              <div
+                className="relative"
+                onMouseEnter={() => handleMouseEnter("types")}
+                onMouseLeave={handleMouseLeave}
+              >
+                <div className={navButtonClass}>
+                  TYPES
+                  <div className={navButtonUnderlineClass} />
+                </div>
+                {activeDropdown === "types" && (
+                  
+                  <div className="absolute top-full left-1/2 z-50 mt-2 w-max -translate-x-1/2 rounded-md border border-gray-700 bg-[#1d1d1f]/90 p-4 shadow-lg transition-opacity duration-300">
+                    <div className="flex flex-col gap-2">
+                      {types.map((label) => (
+                        <Link key={label} href={`/animes/${slugify(label)}`} className="whitespace-nowrap text-white transition-colors duration-200 hover:text-red-500">
+                          {label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+             
+              {navButtons.map((label) => (
+                <div className={navButtonClass} key={label}>
+                  <Link href={`/animes/${slugify(label)}`}>{label}</Link>
+                  <div className={navButtonUnderlineClass} />
+                </div>
+              ))}
             </div>
           </nav>
         </header>
       </div>
 
-      {filter && (
-        <div className="flex items-center justify-center w-full h-screen fixed top-0 left-0 bg-black/50 z-30">
-          <div className="z-50 h-[800px] w-[1200px] text-black bg-white absolute transform -translate-x-1/2 -translate-y-1/2 shadow-lg rounded-xl p-4 left-1/2 top-1/2">
-            <FilterSearch/>
+      {isFilterOpen && (
+        <div onClick={() => setIsFilterOpen(false)} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div onClick={(e) => e.stopPropagation()} className="z-50 h-auto max-h-[90vh] w-[1200px] max-w-[95vw] rounded-xl bg-gray-100 p-4 text-black shadow-lg">
+            <FilterSearch onClose={() => setIsFilterOpen(false)} />
           </div>
         </div>
       )}

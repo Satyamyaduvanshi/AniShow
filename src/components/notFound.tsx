@@ -39,7 +39,7 @@ export default function NotFound() {
           <div className="mt-8">
            
             <Link 
-              href="/" 
+              href="/home" 
               className="inline-block px-6 py-3 text-base font-semibold text-red-500 bg-white rounded-lg shadow-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2  transition-transform transform hover:scale-105 active:scale-95"
             >
               Go Back Home
